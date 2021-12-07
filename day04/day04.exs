@@ -62,23 +62,42 @@ defmodule Day04 do
     end
   end
 
-  def find_last_winning_board(boards, [num | nums]) do
-    case update_remove_winners(boards, num) do
-      [board] ->
-        case check_rows(board) || check_cols(board) do
-          false ->
-            find_last_winning_board(board, nums)
+  def find_last_winning_board([board], [num | nums]) do
+    board =
+      Enum.map(board, fn
+        {el, _x} when el == num -> {el, 1}
+        el -> el
+      end)
 
-          _ ->
-            {board, String.to_integer(num)}
-        end
+    case check_rows(board) || check_cols(board) do
+      true ->
+        {board, String.to_integer(num)}
 
-      boards ->
-        find_last_winning_board(boards, nums)
+      _ ->
+        find_last_winning_board([board], nums)
     end
   end
 
-  def find_last_winning_board(_, [], winners), do: winners
+  def find_last_winning_board(boards, [num | nums]) do
+    # Reduce boards keeping only losers
+    boards
+    |> Enum.reduce([], fn board, acc ->
+      board =
+        Enum.map(board, fn
+          {el, _x} when el == num -> {el, 1}
+          el -> el
+        end)
+
+      case check_rows(board) || check_cols(board) do
+        true ->
+          acc
+
+        _ ->
+          acc ++ [board]
+      end
+    end)
+    |> find_last_winning_board(nums)
+  end
 
   def update_remove_winners([board | []], num) do
     board =
@@ -144,8 +163,8 @@ test_boards = """
  2  0 12  3  7
 """
 
-# test_boards = File.read!("boards.txt")
-# test_nums = File.read!("numbers.txt")
+test_boards = File.read!("boards.txt")
+test_nums = File.read!("numbers.txt")
 
 test_boards =
   test_boards
